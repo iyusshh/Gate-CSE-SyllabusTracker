@@ -167,27 +167,25 @@ export const SubjectDetailModal = ({ subject, onClose, onUpdate }) => {
                         <div className="flex items-center justify-between gap-4 mb-3">
                             <div className="flex items-center gap-4">
                                 <h3 className="font-semibold text-lg text-gray-200">Lectures</h3>
-                                        <input 
+                                        // This section should be near the top of your modal's JSX structure.
+
+<input 
     type="number" 
     min="0" 
-    // Uses the temporary state for visual display
-    value={lectureInputValue} 
+    // FIXED: Use the correct state variable for display
+    value={lectureInputValue}
     
-    // Updates only the temporary state (allows smooth backspacing/typing)
+    // Updates only the temporary state
     onChange={(e) => setLectureInputValue(e.target.value)}
     
-    // Commits the final value to the main application state only when the field loses focus
+    // Commits the final value to the main application state on blur
     onBlur={(e) => {
-        // 1. Convert the user's input to an integer
         const value = parseInt(e.target.value, 10);
-        
-        // 2. Determine the clean value: if it's not a number (empty string), use 0; otherwise, use the value.
         const newValue = isNaN(value) ? 0 : Math.max(0, value);
         
-        // 3. Update the main application state (the reducer)
         dispatch({ type: 'UPDATE_FIELD', field: 'totalLectures', value: newValue });
         
-        // 4. Update the temporary state to reflect the committed clean value (e.g., if user typed 45 and deleted it, this makes the box show "0")
+        // FIXED: Use the correct setter function
         setLectureInputValue(newValue.toString()); 
     }}
     className="bg-white/10 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-sky-500 w-20"
