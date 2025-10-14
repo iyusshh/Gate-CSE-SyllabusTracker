@@ -1,7 +1,6 @@
 import React, { useState, useReducer, useEffect } from 'react';
 import { FaPlus, FaTrash, FaLink, FaChevronDown, FaChevronUp, FaTimes } from 'react-icons/fa';
 
-// --- Reducer for Subject State in Modal ---
 const subjectReducer = (state, action) => {
     switch (action.type) {
         case 'UPDATE_FIELD':
@@ -11,18 +10,14 @@ const subjectReducer = (state, action) => {
         case 'REMOVE_CHAPTER':
             return { ...state, chapters: state.chapters.filter(c => c.id !== action.id) };
         case 'TOGGLE_CHAPTER':
-            // The action.completed property here comes from the checkbox onChange event
             return { ...state, chapters: state.chapters.map(c => c.id === action.id ? { ...c, completed: action.completed } : c) };
         case 'EDIT_CHAPTER_NAME':
             return { ...state, chapters: state.chapters.map(c => c.id === action.id ? { ...c, name: action.name } : c) };
         case 'TOGGLE_LECTURE':
             let completed = new Set(state.completedLectures);
             if (action.checked) {
-                // Check lecture and all preceding
                 for (let i = 1; i <= action.number; i++) completed.add(i);
             } else {
-                // Uncheck lecture and all succeeding
-                // This ensures consistency: if lecture 5 is unchecked, 6, 7, etc. must also be unchecked
                 for (let i = action.number; i <= state.totalLectures; i++) completed.delete(i);
                 
             }
@@ -40,7 +35,6 @@ const LectureToggle = ({ number, isCompleted, onToggle }) => (
             type="checkbox" 
             className="hidden peer" 
             checked={isCompleted} 
-            // We pass the new state back to the handler
             onChange={(e) => onToggle(number, e.target.checked)}
         />
         <span className={`w-10 h-10 flex items-center justify-center rounded-md text-sm cursor-pointer transition-all ${isCompleted ? 'bg-teal-500 text-white hover:opacity-80' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
@@ -52,21 +46,17 @@ const LectureToggle = ({ number, isCompleted, onToggle }) => (
 export const SubjectDetailModal = ({ subject, onClose, onUpdate }) => {
     const [localSubject, dispatch] = useReducer(subjectReducer, subject);
     const [lectureInputValue, setLectureInputValue] = useState(localSubject.totalLectures.toString());
-    // Sync the local input value when the subject state changes (e.g., modal opening)
     useEffect(() => {
         setLectureInputValue(localSubject.totalLectures.toString());
     }, [localSubject.totalLectures]);
     const [showCompletedLectures, setShowCompletedLectures] = useState(false);
 
-    // Effect to persist changes back to the parent state and local storage
-    // Runs automatically whenever localSubject state changes
     useEffect(() => {
         onUpdate(localSubject);
     }, [localSubject, onUpdate]);
 
     const timeSince = localSubject.startDate ? Math.floor((new Date() - new Date(localSubject.startDate)) / 864e5) : 0;
     
-    // Use the actual totalLectures from state, defaulting to 45 if not set
     const totalLecturesCount = localSubject.totalLectures || 45; 
     const allLectures = Array.from({ length: totalLecturesCount }, (_, i) => i + 1);
     const completedLecturesSet = new Set(localSubject.completedLectures);
@@ -74,17 +64,14 @@ export const SubjectDetailModal = ({ subject, onClose, onUpdate }) => {
     const uncompletedLectures = allLectures.filter(l => !completedLecturesSet.has(l));
     const completedLectures = allLectures.filter(l => completedLecturesSet.has(l));
     
-    // Handler for Lecture Toggling
     const handleToggleLecture = (number, checked) => {
         dispatch({ type: 'TOGGLE_LECTURE', number, checked });
     };
 
-    // Handler for Chapter Toggling
     const handleToggleChapter = (chapterId, completed) => {
         dispatch({ type: 'TOGGLE_CHAPTER', id: chapterId, completed });
     };
 
-    // Handler for Chapter Name Change
     const handleChapterNameChange = (chapterId, name) => {
         dispatch({ type: 'EDIT_CHAPTER_NAME', id: chapterId, name });
     };
@@ -102,7 +89,6 @@ export const SubjectDetailModal = ({ subject, onClose, onUpdate }) => {
                                     type="date" 
                                     value={localSubject.startDate ? localSubject.startDate.split('T')[0] : ''}
                                     onChange={(e) =>  {
-                                    // If the date input has a value, convert it to an ISO string for storage; otherwise, set to null.
                                             const dateValue = e.target.value;
                                             dispatch({ type: 'UPDATE_FIELD', field: 'startDate', value: dateValue ? new Date(dateValue + 'T00:00:00').toISOString() : null });
                                         }}
@@ -167,25 +153,17 @@ export const SubjectDetailModal = ({ subject, onClose, onUpdate }) => {
                         <div className="flex items-center justify-between gap-4 mb-3">
                             <div className="flex items-center gap-4">
                                 <h3 className="font-semibold text-lg text-gray-200">Lectures</h3>
-                                        // This section should be near the top of your modal's JSX structure.
+                                        {/* The corrected lecture count input field is now correctly nested */}
 
 <input 
     type="number" 
     min="0" 
-    // FIXED: Use the correct state variable for display
     value={lectureInputValue}
-    
-    // Updates only the temporary state
     onChange={(e) => setLectureInputValue(e.target.value)}
-    
-    // Commits the final value to the main application state on blur
     onBlur={(e) => {
         const value = parseInt(e.target.value, 10);
         const newValue = isNaN(value) ? 0 : Math.max(0, value);
-        
         dispatch({ type: 'UPDATE_FIELD', field: 'totalLectures', value: newValue });
-        
-        // FIXED: Use the correct setter function
         setLectureInputValue(newValue.toString()); 
     }}
     className="bg-white/10 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-sky-500 w-20"
