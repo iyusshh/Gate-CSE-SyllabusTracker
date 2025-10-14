@@ -27,12 +27,17 @@ const getInitialSubjects = () => [
 ];
 
 const CountdownTimer = ({ targetYear }) => {
-    if (!targetYear) return null;
-    
-    const targetDate = useMemo(() => new Date(`${targetYear}-02-01T00:00:00`), [targetYear]);
+    // 1. ALL HOOKS MUST COME FIRST
+    const targetDate = useMemo(() => {
+        // Only create the date if targetYear exists
+        return targetYear ? new Date(`${targetYear}-02-01T00:00:00`) : null;
+    }, [targetYear]);
+
     const [timeLeft, setTimeLeft] = useState({});
 
     const calculateTimeLeft = useCallback(() => {
+        if (!targetDate) return {};
+        
         const diff = +targetDate - +new Date();
         if (diff > 0) {
             return {
@@ -46,13 +51,22 @@ const CountdownTimer = ({ targetYear }) => {
     }, [targetDate]);
 
     useEffect(() => {
+        // Only run the timer if targetDate is valid
+        if (!targetDate) return;
+        
         setTimeLeft(calculateTimeLeft());
         const timer = setInterval(() => {
             setTimeLeft(calculateTimeLeft());
         }, 1000);
         return () => clearInterval(timer);
-    }, [calculateTimeLeft]);
+    }, [calculateTimeLeft, targetDate]); // Added targetDate as dependency
 
+    // 2. CONDITIONAL RETURN COMES AFTER ALL HOOKS
+    if (!targetYear || !targetDate) {
+        return null;
+    }
+    
+    // 3. Render logic follows
     const timeComponents = [
         { l: 'Days', v: timeLeft.d },
         { l: 'Hours', v: timeLeft.h },
