@@ -51,6 +51,11 @@ const LectureToggle = ({ number, isCompleted, onToggle }) => (
 
 export const SubjectDetailModal = ({ subject, onClose, onUpdate }) => {
     const [localSubject, dispatch] = useReducer(subjectReducer, subject);
+    const [lectureInputValue, setLectureInputValue] = useState(localSubject.totalLectures.toString());
+    // Sync the local input value when the subject state changes (e.g., modal opening)
+    useEffect(() => {
+        setLectureInputValue(localSubject.totalLectures.toString());
+    }, [localSubject.totalLectures]);
     const [showCompletedLectures, setShowCompletedLectures] = useState(false);
 
     // Effect to persist changes back to the parent state and local storage
@@ -163,24 +168,30 @@ export const SubjectDetailModal = ({ subject, onClose, onUpdate }) => {
                             <div className="flex items-center gap-4">
                                 <h3 className="font-semibold text-lg text-gray-200">Lectures</h3>
                                         <input 
-                                            type="number" 
-                                            min="0"
-                                            max="100" 
-                                            value={inputValue}
-                                            // Update local state on change
-                                            onChange={(e) => setInputValue(e.target.value)}
-                                            onBlur={(e) => {
-                                                // When input loses focus, calculate the final value to save
-                                                const value = parseInt(e.target.value, 10);
-                                                // If value is NaN (empty/non-numeric), use 0. Otherwise, use the max of 0 and the parsed value.
-                                                const newValue = isNaN(value) ? 0 : Math.max(0, value);
-                                                
-                                                // Update the internal state and the component state
-                                                dispatch({ type: 'UPDATE_FIELD', field: 'totalLectures', value: newValue });
-                                                setInputValue(newValue.toString()); // Update local state for consistent display
-                                            }}
-                                            className="bg-white/10 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-sky-500 w-20"
-                                        />
+    type="number" 
+    min="0" 
+    // Uses the temporary state for visual display
+    value={lectureInputValue} 
+    
+    // Updates only the temporary state (allows smooth backspacing/typing)
+    onChange={(e) => setLectureInputValue(e.target.value)}
+    
+    // Commits the final value to the main application state only when the field loses focus
+    onBlur={(e) => {
+        // 1. Convert the user's input to an integer
+        const value = parseInt(e.target.value, 10);
+        
+        // 2. Determine the clean value: if it's not a number (empty string), use 0; otherwise, use the value.
+        const newValue = isNaN(value) ? 0 : Math.max(0, value);
+        
+        // 3. Update the main application state (the reducer)
+        dispatch({ type: 'UPDATE_FIELD', field: 'totalLectures', value: newValue });
+        
+        // 4. Update the temporary state to reflect the committed clean value (e.g., if user typed 45 and deleted it, this makes the box show "0")
+        setLectureInputValue(newValue.toString()); 
+    }}
+    className="bg-white/10 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-sky-500 w-20"
+/>
                             </div>
                         </div>
                         

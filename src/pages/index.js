@@ -27,9 +27,9 @@ const getInitialSubjects = () => [
 ];
 
 const CountdownTimer = ({ targetYear }) => {
-    // 1. ALL HOOKS MUST COME FIRST
+    // 1. ALL HOOKS MUST BE CALLED HERE, UNCONDITIONALLY.
     const targetDate = useMemo(() => {
-        // Only create the date if targetYear exists
+        // Calculation can be conditional, but the hook call cannot.
         return targetYear ? new Date(`${targetYear}-02-01T00:00:00`) : null;
     }, [targetYear]);
 
@@ -51,7 +51,7 @@ const CountdownTimer = ({ targetYear }) => {
     }, [targetDate]);
 
     useEffect(() => {
-        // Only run the timer if targetDate is valid
+        // The effect runs, but its internal logic is conditional.
         if (!targetDate) return;
         
         setTimeLeft(calculateTimeLeft());
@@ -59,14 +59,13 @@ const CountdownTimer = ({ targetYear }) => {
             setTimeLeft(calculateTimeLeft());
         }, 1000);
         return () => clearInterval(timer);
-    }, [calculateTimeLeft, targetDate]); // Added targetDate as dependency
+    }, [calculateTimeLeft, targetDate]);
 
-    // 2. CONDITIONAL RETURN COMES AFTER ALL HOOKS
+    // 2. CONDITIONAL RETURNS MUST FOLLOW ALL HOOKS.
     if (!targetYear || !targetDate) {
         return null;
     }
     
-    // 3. Render logic follows
     const timeComponents = [
         { l: 'Days', v: timeLeft.d },
         { l: 'Hours', v: timeLeft.h },
@@ -179,9 +178,7 @@ export default function Home() {
             <Head>
                 <title>GATE CSE Syllabus Tracker</title>
                 {/* Include custom font links here if you had a custom _document.js */}
-                <link rel="preconnect" href="https://fonts.googleapis.com"/>
-                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true"/>
-                <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600&family=Inter:wght@400;500;700&display=swap" rel="stylesheet"/>
+            
             </Head>
             <style jsx global>{`
                 :root {
