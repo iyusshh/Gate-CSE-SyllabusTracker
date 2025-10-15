@@ -78,7 +78,7 @@ const CountdownTimer = ({ targetYear }) => {
             <div className="p-4 bg-gray-800/50 rounded-lg shadow-xl border border-gray-700">
                 <p className="text-sm text-gray-400 flex items-center">
                     <FaCalendarAlt className="mr-2 text-red-400" /> 
-                    Target year not set. Click 'Settings' to begin.
+                    Target year not set. Click &apos;Settings&apos; to begin.
                 </p>
             </div>
         );
