@@ -29,13 +29,13 @@ const getInitialSubjects = () => [
     { id: 'disc-math', name: 'Discrete Mathematics', chapters: ['Propositional and First Order Logic', 'Sets, Relations & Functions', 'Monoids, Groups', 'Graph Theory', 'Combinatorics'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
     { id: 'gen-apti', name: 'General Aptitude', chapters: ['Quantitative Aptitude', 'Analytical Aptitude', 'Spatial Aptitude', 'Verbal Aptitude'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
     { id: 'dig-logic', name: 'Digital Logic', chapters: ['Boolean Algebra', 'Combinational and Sequential Circuits', 'Minimization', 'Number Representations & Computer Arithmetic'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
-    { id: 'comp-org', name: 'Computer Organization', chapters: ['Machine Instructions & Addressing Modes', 'ALU, Data-path and Control Unit', 'Instruction Pipelining', 'Memory Hierarchy', 'I/O Interface'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
-    { id: 'prog-ds', name: 'Programming & DS', chapters: ['Programming in C', 'Recursion', 'Arrays, Stacks, Queues', 'Linked Lists', 'Trees, BSTs, Heaps', 'Graphs'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
+    { id: 'comp-org', name: 'Computer Organization & Architecture', chapters: ['Machine Instructions & Addressing Modes', 'ALU, Data-path and Control Unit', 'Instruction Pipelining', 'Memory Hierarchy', 'I/O Interface'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
+    { id: 'prog-ds', name: 'Programming & Data Structures', chapters: ['Programming in C', 'Recursion', 'Arrays, Stacks, Queues', 'Linked Lists', 'Trees, BSTs, Heaps', 'Graphs'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
     { id: 'algo', name: 'Algorithms', chapters: ['Searching, Sorting, Hashing', 'Asymptotic Complexity', 'Greedy, Dynamic Programming, Divide-and-Conquer', 'Graph Traversals', 'Minimum Spanning Trees', 'Shortest Paths'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
     { id: 'toc', name: 'Theory of Computation', chapters: ['Regular Expressions & Finite Automata', 'Context-Free Grammars & Push-Down Automata', 'Regular and Context-Free Languages', 'Turing Machines and Undecidability'].map(createChapter), completedLectures: [], totalLectules: 45, startDate: null, courseLink: '' },
     { id: 'comp-des', name: 'Compiler Design', chapters: ['Lexical Analysis', 'Parsing, Syntax-Directed Translation', 'Runtime Environments', 'Intermediate Code Generation', 'Local Optimisation & Data Flow Analyses'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
     { id: 'os', name: 'Operating System', chapters: ['System Calls, Processes, Threads', 'Concurrency and Synchronization', 'Deadlock', 'CPU and I/O Scheduling', 'Memory Management & Virtual Memory', 'File Systems'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
-    { id: 'dbms', name: 'Database Management', chapters: ['ER-model', 'Relational Model (Algebra, Calculus, SQL)', 'Integrity Constraints, Normal Forms', 'File Organization, Indexing', 'Transactions & Concurrency Control'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
+    { id: 'dbms', name: 'Database Management System', chapters: ['ER-model', 'Relational Model (Algebra, Calculus, SQL)', 'Integrity Constraints, Normal Forms', 'File Organization, Indexing', 'Transactions & Concurrency Control'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
     { id: 'comp-net', name: 'Computer Networks', chapters: ['Layering Concepts (OSI/TCP/IP)', 'Data Link Layer', 'Routing Protocols', 'IP Addressing & Support Protocols (v4)', 'Transport Layer (TCP/UDP)', 'Application Layer Protocols'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
 ];
 // --- End UTILITY FUNCTIONS ---
@@ -130,30 +130,63 @@ export default function Home() {
     const [showYearModal, setShowYearModal] = useState(false);
     
     // 1. Initial Data Loading (IndexedDB)
-    useEffect(() => {
-        async function loadInitialData() {
-            try {
-                const savedSubjects = await loadSubjects();
-                const initialSubjects = savedSubjects || getInitialSubjects();
-                setSubjects(initialSubjects);
-                
-                const savedYear = await loadTargetYear();
-                setTargetYear(savedYear);
-                
-                if (!savedYear) {
-                    setShowYearModal(true);
-                }
-            } catch (error) {
-                console.error("Error loading data from IndexedDB:", error);
-                setSubjects(getInitialSubjects());
-                setShowYearModal(true);
-            } finally {
-                setIsLoading(false);
+useEffect(() => {
+    async function loadInitialData() {
+        try {
+            const savedSubjects = await loadSubjects();
+            const defaultSubjects = getInitialSubjects(); // Get the latest definitions
+
+            let subjectsToSet = defaultSubjects;
+
+            if (savedSubjects && savedSubjects.length > 0) {
+                // --- Data Migration / Merge Logic ---
+                subjectsToSet = defaultSubjects.map(defaultSub => {
+                    const savedSub = savedSubjects.find(s => s.id === defaultSub.id);
+                    
+                    if (savedSub) {
+                        // Merge: Use the latest name/totalLectures from defaultSub, 
+                        // but keep user-specific progress (chapters, completedLectures, etc.) from savedSub.
+                        return {
+                            ...savedSub, // Keep progress (chapters, completedLectures)
+                            name: defaultSub.name, // 👈 OVERWRITE with the new, correct name
+                            totalLectures: defaultSub.totalLectures, // Overwrite with new lecture count if defined
+                            // Add logic for any other fields you want to update from the default
+                        };
+                    }
+                    // If a subject is new (not in saved data), use the default
+                    return defaultSub;
+                });
+                // Note: This logic assumes you never want to DELETE a subject from the user's saved list,
+                // but only update its structure/metadata like name.
             }
+            
+            setSubjects(subjectsToSet); // Set the merged or default list
+            
+            // ... (rest of the target year logic)
+            const savedYear = await loadTargetYear();
+            setTargetYear(savedYear);
+            
+            if (!savedYear) {
+                setShowYearModal(true);
+            }
+            
+            // OPTIONAL: Save the merged list back to IndexedDB immediately 
+            // so the migration doesn't run on every load.
+            if (savedSubjects && savedSubjects.length > 0) {
+                 await saveSubjects(subjectsToSet);
+            }
+
+        } catch (error) {
+            console.error("Error loading or migrating data from IndexedDB:", error);
+            setSubjects(getInitialSubjects()); // Fallback
+            setShowYearModal(true);
+        } finally {
+            setIsLoading(false);
         }
-        
-        loadInitialData();
-    }, []); 
+    }
+    
+    loadInitialData();
+}, []); 
 
 
     // 2. Update Handler - updates state and saves to IndexedDB

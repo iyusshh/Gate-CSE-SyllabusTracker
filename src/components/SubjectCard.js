@@ -39,9 +39,16 @@ export const SubjectCard = ({ subject, index, onClick }) => {
         >
             {/* 1. Subject Header */}
             <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center">
+                {/* CHANGE 1: Removed 'items-center' for better vertical alignment 
+                            if name wraps to 3+ lines.
+                  CHANGE 2: Added 'flex-wrap' to ensure the text can move to the next line.
+                */}
+                <div className="flex items-start flex-wrap"> 
                     <IconComponent className="w-6 h-6 text-sky-400 flex-shrink-0 mr-3 transition-transform duration-300 group-hover:scale-110" />
-                    <h3 className="font-header font-bold text-lg text-white truncate leading-tight">
+                    {/* CHANGE 3: Removed 'truncate'.
+                      CHANGE 4: Added 'flex-1' to let the h3 take the remaining width.
+                    */}
+                    <h3 className="font-header font-bold text-lg text-white leading-tight flex-1">
                         {subject.name}
                     </h3>
                 </div>
@@ -49,9 +56,6 @@ export const SubjectCard = ({ subject, index, onClick }) => {
             
             {/* 2. Main Circular Progress (Lectures) */}
             <div className="flex items-center justify-center my-4">
-                {/* Dangerously set the HTML for the Circular Progress Bar 
-                    This ensures the glow and SVG are rendered correctly.
-                */}
                 <div dangerouslySetInnerHTML={{ __html: renderCircularProgressBar(lectureProgress, isComplete) }} />
             </div>
             
