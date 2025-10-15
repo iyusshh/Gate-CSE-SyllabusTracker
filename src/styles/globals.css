@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @tailwind utilities;
 
+/* -------------------------------------------------------------------------- */
+/* Global Variables and Defaults (UNCHANGED) */
+/* -------------------------------------------------------------------------- */
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -9,19 +13,66 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-geist-sans); 
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #000000; 
     --foreground: #ededed;
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Animated Background Glow Implementation (FIXED FOR SMOOTHNESS) */
+/* -------------------------------------------------------------------------- */
+
+/* FIX 1: Animating background-position instead of background-image */
+@keyframes diagonalShift {
+    /* Top Right Start Position */
+    0% { background-position: 100% 0%; } 
+    /* Bottom Left End Position */
+    100% { background-position: 0% 100%; }
+}
+
 body {
-  background: var(--background);
+  background-color: var(--background) !important; 
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans); 
+  
+  position: relative;
+  overflow-x: hidden; 
+}
+
+/* Pseudo-element for the screen-wide, animated glow */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  
+  opacity: 0.35; 
+  pointer-events: none;
+  z-index: -1; 
+  filter: blur(250px); 
+  
+  /* FIX 2: Combine all colors into one large, static gradient */
+  background-image: radial-gradient(
+      circle at 100% 0%, 
+      #06b6d4 10%,   /* Cyan (Top Right) */
+      #a855f7 30%,   /* Violet */
+      #f472b6 50%,   /* Pink */
+      #4c4ff0 70%,   /* Indigo */
+      transparent 90%
+  );
+  
+  /* FIX 3: Set background size larger than viewport to enable continuous movement */
+  background-size: 400% 400%; /* Very large size for slow, subtle movement */
+  
+  /* FIX 4: Use the new background-position animation for smooth diagonal flow */
+  animation: diagonalShift 60s linear infinite alternate; 
+  /* Increased duration to 60s for a very slow, subtle speed. 
+     'alternate' makes it flow back up for a continuous cycle. */
+
+  /* Removed 'transition: background-image' as we are now animating 'background-position' */
 }

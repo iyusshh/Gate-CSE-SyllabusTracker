@@ -1,4 +1,4 @@
-// pages/index.js (Redesigned UI - V3 with User's Specific Icons)
+// pages/index.js 
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Head from 'next/head';
@@ -8,23 +8,19 @@ import {
     FaCog, FaBook, FaGlobe, FaBezierCurve, FaLaptopCode, FaDatabase, 
     FaNetworkWired, FaMicrochip, FaTerminal, FaCodeBranch, FaShieldAlt
 } from 'react-icons/fa'; 
-import { BsLayersFill } from "react-icons/bs"; // NEW: Import BsLayersFill
+import { BsLayersFill } from "react-icons/bs"; 
 
-// Imports updated to use the 'src/' structure (assuming components/ and utils/ are under src/)
 import { SubjectCard } from '../components/SubjectCard';
 import { SubjectDetailModal } from '../components/SubjectDetailModal';
 import { GateYearModal } from '../components/GateYearModal';
 import { getSubjectIcon } from '../utils/icons'; 
-
-// NEW IMPORT for IndexedDB
 import { saveSubjects, loadSubjects, saveTargetYear, loadTargetYear } from '../utils/idb';
 
 
-// --- UTILITY FUNCTIONS (Kept as is) ---
+// --- UTILITY FUNCTIONS ---
 const createChapter = (name) => ({ id: Math.random().toString(36).substr(2, 9), name, completed: false });
 
 const getInitialSubjects = () => [
-    // ... Your complete list of subjects as originally defined ...
     { id: 'eng-math', name: 'Engineering Mathematics', chapters: ['Linear Algebra', 'Calculus', 'Probability and Statistics'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
     { id: 'disc-math', name: 'Discrete Mathematics', chapters: ['Propositional and First Order Logic', 'Sets, Relations & Functions', 'Monoids, Groups', 'Graph Theory', 'Combinatorics'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
     { id: 'gen-apti', name: 'General Aptitude', chapters: ['Quantitative Aptitude', 'Analytical Aptitude', 'Spatial Aptitude', 'Verbal Aptitude'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
@@ -32,7 +28,7 @@ const getInitialSubjects = () => [
     { id: 'comp-org', name: 'Computer Organization & Architecture', chapters: ['Machine Instructions & Addressing Modes', 'ALU, Data-path and Control Unit', 'Instruction Pipelining', 'Memory Hierarchy', 'I/O Interface'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
     { id: 'prog-ds', name: 'Programming & Data Structures', chapters: ['Programming in C', 'Recursion', 'Arrays, Stacks, Queues', 'Linked Lists', 'Trees, BSTs, Heaps', 'Graphs'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
     { id: 'algo', name: 'Algorithms', chapters: ['Searching, Sorting, Hashing', 'Asymptotic Complexity', 'Greedy, Dynamic Programming, Divide-and-Conquer', 'Graph Traversals', 'Minimum Spanning Trees', 'Shortest Paths'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
-    { id: 'toc', name: 'Theory of Computation', chapters: ['Regular Expressions & Finite Automata', 'Context-Free Grammars & Push-Down Automata', 'Regular and Context-Free Languages', 'Turing Machines and Undecidability'].map(createChapter), completedLectures: [], totalLectules: 45, startDate: null, courseLink: '' },
+    { id: 'toc', name: 'Theory of Computation', chapters: ['Regular Expressions & Finite Automata', 'Context-Free Grammars & Push-Down Automata', 'Regular and Context-Free Languages', 'Turing Machines and Undecidability'].map(createChapter), completedLectules: 45, startDate: null, courseLink: '' },
     { id: 'comp-des', name: 'Compiler Design', chapters: ['Lexical Analysis', 'Parsing, Syntax-Directed Translation', 'Runtime Environments', 'Intermediate Code Generation', 'Local Optimisation & Data Flow Analyses'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
     { id: 'os', name: 'Operating System', chapters: ['System Calls, Processes, Threads', 'Concurrency and Synchronization', 'Deadlock', 'CPU and I/O Scheduling', 'Memory Management & Virtual Memory', 'File Systems'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
     { id: 'dbms', name: 'Database Management System', chapters: ['ER-model', 'Relational Model (Algebra, Calculus, SQL)', 'Integrity Constraints, Normal Forms', 'File Organization, Indexing', 'Transactions & Concurrency Control'].map(createChapter), completedLectures: [], totalLectures: 45, startDate: null, courseLink: '' },
@@ -121,7 +117,7 @@ const CountdownTimer = ({ targetYear }) => {
 // --- End CountdownTimer ---
 
 
-// --- Main App Component (MODIFIED with new UI structure) ---
+// --- Main App Component ---
 export default function Home() {
     const [subjects, setSubjects] = useState([]);
     const [targetYear, setTargetYear] = useState(null);
@@ -129,90 +125,77 @@ export default function Home() {
     const [isLoading, setIsLoading] = useState(true);
     const [showYearModal, setShowYearModal] = useState(false);
     
-    // 1. Initial Data Loading (IndexedDB)
-useEffect(() => {
-    async function loadInitialData() {
-        try {
-            const savedSubjects = await loadSubjects();
-            const defaultSubjects = getInitialSubjects(); // Get the latest definitions
+    // Initial Data Loading (IndexedDB)
+    useEffect(() => {
+        async function loadInitialData() {
+            try {
+                const savedSubjects = await loadSubjects();
+                const defaultSubjects = getInitialSubjects(); 
 
-            let subjectsToSet = defaultSubjects;
+                let subjectsToSet = defaultSubjects;
 
-            if (savedSubjects && savedSubjects.length > 0) {
-                // --- Data Migration / Merge Logic ---
-                subjectsToSet = defaultSubjects.map(defaultSub => {
-                    const savedSub = savedSubjects.find(s => s.id === defaultSub.id);
-                    
-                    if (savedSub) {
-                        // Merge: Use the latest name/totalLectures from defaultSub, 
-                        // but keep user-specific progress (chapters, completedLectures, etc.) from savedSub.
-                        return {
-                            ...savedSub, // Keep progress (chapters, completedLectures)
-                            name: defaultSub.name, // 👈 OVERWRITE with the new, correct name
-                            totalLectures: defaultSub.totalLectures, // Overwrite with new lecture count if defined
-                            // Add logic for any other fields you want to update from the default
-                        };
-                    }
-                    // If a subject is new (not in saved data), use the default
-                    return defaultSub;
-                });
-                // Note: This logic assumes you never want to DELETE a subject from the user's saved list,
-                // but only update its structure/metadata like name.
-            }
-            
-            setSubjects(subjectsToSet); // Set the merged or default list
-            
-            // ... (rest of the target year logic)
-            const savedYear = await loadTargetYear();
-            setTargetYear(savedYear);
-            
-            if (!savedYear) {
+                if (savedSubjects && savedSubjects.length > 0) {
+                    subjectsToSet = defaultSubjects.map(defaultSub => {
+                        const savedSub = savedSubjects.find(s => s.id === defaultSub.id);
+                        
+                        if (savedSub) {
+                            return {
+                                ...savedSub,
+                                name: defaultSub.name,
+                                totalLectures: defaultSub.totalLectures,
+                            };
+                        }
+                        return defaultSub;
+                    });
+                }
+                
+                setSubjects(subjectsToSet);
+                
+                const savedYear = await loadTargetYear();
+                setTargetYear(savedYear);
+                
+                if (!savedYear) {
+                    setShowYearModal(true);
+                }
+                
+                if (savedSubjects && savedSubjects.length > 0) {
+                     await saveSubjects(subjectsToSet);
+                }
+
+            } catch (error) {
+                console.error("Error loading or migrating data from IndexedDB:", error);
+                setSubjects(getInitialSubjects());
                 setShowYearModal(true);
+            } finally {
+                setIsLoading(false);
             }
-            
-            // OPTIONAL: Save the merged list back to IndexedDB immediately 
-            // so the migration doesn't run on every load.
-            if (savedSubjects && savedSubjects.length > 0) {
-                 await saveSubjects(subjectsToSet);
-            }
-
-        } catch (error) {
-            console.error("Error loading or migrating data from IndexedDB:", error);
-            setSubjects(getInitialSubjects()); // Fallback
-            setShowYearModal(true);
-        } finally {
-            setIsLoading(false);
         }
-    }
-    
-    loadInitialData();
-}, []); 
+        
+        loadInitialData();
+    }, []); 
 
 
-    // 2. Update Handler - updates state and saves to IndexedDB
+    // Update Handler
     const updateSubject = useCallback((updatedSubject) => {
         setSubjects(prevSubjects => {
             const newSubjects = prevSubjects.map(s => s.id === updatedSubject.id ? updatedSubject : s);
-            
             saveSubjects(newSubjects).catch(err => {
                 console.error("Error saving subjects to IndexedDB:", err);
             });
-            
             return newSubjects;
         });
     }, []);
     
-    // 3. Update Target Year Handler
+    // Update Target Year Handler
     const updateTargetYear = useCallback(async (year) => {
         setTargetYear(year);
         setShowYearModal(false);
-        
         saveTargetYear(year).catch(err => {
             console.error("Error saving target year to IndexedDB:", err);
         });
     }, []);
     
-    // Calculate Overall Progress (Derived State - UNCHANGED)
+    // Calculate Overall Progress
     const { totalLectures, totalCompletedLectures, globalProgress, completedSubjectsCount } = useMemo(() => {
         const total = subjects.reduce((acc, s) => acc + (s.totalLectures || 0), 0);
         const completed = subjects.reduce((acc, s) => acc + s.completedLectures.length, 0);
@@ -231,10 +214,10 @@ useEffect(() => {
 
     const selectedSubject = subjects.find(s => s.id === selectedSubjectId);
     
-    // --- Conditional Rendering ---
+    // --- Conditional Loading View ---
     if (isLoading) {
         return (
-            <div className="bg-[#0f172a] min-h-screen flex items-center justify-center">
+            <div className="bg-black min-h-screen flex items-center justify-center">
                 <div className="text-center text-cyan-400 py-20 text-lg">
                     <FaTachometerAlt className="animate-spin inline-block mr-2" />
                     Loading Local Progress...
@@ -243,52 +226,19 @@ useEffect(() => {
         );
     }
 
-    // Main App View
+    // --- Main App View ---
     return (
-        <div className="bg-[#0f172a] text-gray-100 selection:bg-cyan-600/50 min-h-screen relative font-sans">
+        // Ensured font-sans is here for default text, and no conflicting background color.
+        <div className="text-gray-100 selection:bg-cyan-600/50 min-h-screen relative font-sans">
             <Head>
                 <title>GATE CSE Dashboard</title>
             </Head>
-            {/* Global Styles for the new aesthetic */}
-            <style jsx global>{`
-                :root {
-                    --font-header: 'Sora', sans-serif;
-                    --font-body: 'Inter', sans-serif;
-                }
-                body {
-                    font-family: var(--font-body);
-                    background-color: #0f172a; /* Slate-900 */
-                }
-                .font-header {
-                    font-family: var(--font-header);
-                }
-                .scrollbar-thin { scrollbar-width: thin; scrollbar-color: #334155 #0f172a; }
-                .scrollbar-thin::-webkit-scrollbar { width: 8px; }
-                .scrollbar-thin::-webkit-scrollbar-track { background: #0f172a; }
-                .scrollbar-thin::-webkit-scrollbar-thumb { background-color: #334155; border-radius: 20px; border: 3px solid #0f172a; }
-                
-                /* Darker, subtle background pattern/glow */
-                .radiant-bg-container::before {
-                    content: "";
-                    position: fixed;
-                    inset: 0;
-                    opacity: 0.1;
-                    background-image: radial-gradient(circle at 10% 10%, #06b6d4 0%, transparent 20%), 
-                                      radial-gradient(circle at 90% 90%, #6366f1 0%, transparent 20%);
-                    background-size: 100% 100%;
-                    pointer-events: none;
-                    z-index: -1;
-                    filter: blur(150px);
-                }
-                .progress-ring-circle { transition: stroke-dashoffset 0.5s ease-out; }
-
-            `}</style>
-
-            <div className="radiant-bg-container"></div>
 
             <div id="app-root" className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                
                 {/* --- HEADER / TOP SECTION --- */}
                 <header className="flex justify-between items-center mb-8 pb-4 border-b border-gray-800">
+                    {/* FIX: Ensuring font-header is applied to the main title */}
                     <h1 className="text-3xl font-header font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-indigo-500">
                         GATE CSE TRACKER <span className='text-sm text-gray-500 ml-2'>v1.0</span>
                     </h1>
@@ -344,7 +294,7 @@ useEffect(() => {
                                 </div>
                             </div>
 
-                            {/* Progress Details */}
+                            {/* Progress Details - Also using font-header here for consistency */}
                             <div>
                                 <h2 className="text-xl sm:text-2xl font-header font-bold mb-1 text-white">
                                     Overall Syllabus Progress
@@ -362,12 +312,11 @@ useEffect(() => {
 
                 {/* --- SUBJECTS GRID --- */}
                 <main className="mb-12">
+                    {/* FIX: Ensuring font-header is applied to the Subjects section title */}
                     <h2 className="text-xl font-header font-semibold mb-6 text-gray-300 flex items-center border-b border-gray-800 pb-2">
-                        {/* Using FaBook as a general icon for the subject list section */}
                         <FaBook className="mr-2 text-indigo-400"/> Core Subjects
                     </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {/* The subject card will now use the specific icons you defined */}
                         {subjects.map((subject, index) => (
                             <SubjectCard
                                 key={subject.id}
@@ -379,38 +328,35 @@ useEffect(() => {
                     </div>
                 </main>
             
-                {/* --- FOOTER --- */}
+                {/* --- FOOTER (UNCHANGED) --- */}
                 <footer className="relative z-10 max-w-7xl mx-auto px-4 py-6 mt-12 text-center text-gray-600 border-t border-gray-800">
-  <div className="flex justify-center items-center gap-6 mb-2">
-    <a
-      href="https://www.linkedin.com/in/aayush-rai-7334262a9/"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="hover:text-blue-400 transition-colors"
-      aria-label="LinkedIn Profile"
-    >
-      <FaLinkedin className="w-5 h-5" />
-    </a>
-
-    {/* GitHub icon with green hover and scale effect */}
-    <a
-      href="https://github.com/iyusshh"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-gray-600 hover:text-green-400 transform hover:scale-110 transition-all duration-300 ease-in-out"
-      aria-label="GitHub Profile"
-    >
-      <FaGithub className="w-5 h-5" />
-    </a>
-  </div>
-
-  <p className="text-sm">
-    Developed by Aayush Rai
-  </p>
-  <p className="text-xs mt-1 text-gray-700">
-    Data stored locally using IndexedDB
-  </p>
-</footer>
+                    <div className="flex justify-center items-center gap-6 mb-2">
+                        <a
+                            href="https://www.linkedin.com/in/aayush-rai-7334262a9/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-blue-400 transition-colors"
+                            aria-label="LinkedIn Profile"
+                        >
+                            <FaLinkedin className="w-5 h-5" />
+                        </a>
+                        <a
+                            href="https://github.com/iyusshh"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-gray-600 hover:text-green-400 transform hover:scale-110 transition-all duration-300 ease-in-out"
+                            aria-label="GitHub Profile"
+                        >
+                            <FaGithub className="w-5 h-5" />
+                        </a>
+                    </div>
+                    <p className="text-sm">
+                        Developed by Aayush Rai
+                    </p>
+                    <p className="text-xs mt-1 text-gray-700">
+                        Data stored locally using IndexedDB
+                    </p>
+                </footer>
 
             </div>
 
@@ -419,13 +365,13 @@ useEffect(() => {
                 <SubjectDetailModal
                     subject={selectedSubject}
                     onClose={() => setSelectedSubjectId(null)}
-                    onUpdate={updateSubject} // Triggers IndexedDB save
+                    onUpdate={updateSubject}
                 />
             )}
             
             {showYearModal && (
                 <GateYearModal
-                    onSetYear={updateTargetYear} // Triggers IndexedDB save
+                    onSetYear={updateTargetYear}
                     onClose={() => setShowYearModal(false)}
                 />
             )}
