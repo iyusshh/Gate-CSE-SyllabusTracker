@@ -55,7 +55,24 @@ export const SubjectDetailModal = ({ subject, onClose, onUpdate }) => {
         onUpdate(localSubject);
     }, [localSubject, onUpdate]);
 
-    const timeSince = localSubject.startDate ? Math.floor((new Date() - new Date(localSubject.startDate)) / 864e5) : 0;
+    // MODIFICATION 1: Robust calculation for days since start date (fixes timezone bugs)
+    const timeSince = localSubject.startDate ? (() => {
+        // Use the YYYY-MM-DD portion of the stored date string
+        const dateStr = localSubject.startDate.split('T')[0];
+        
+        // Create Date objects, forcing them to a consistent starting point (midnight) 
+        // to ensure Math.floor/Math.abs calculates full day differences.
+        const start = new Date(dateStr); 
+        const today = new Date();
+        
+        today.setHours(0, 0, 0, 0);
+        start.setHours(0, 0, 0, 0);
+
+        const diffTime = today.getTime() - start.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+        
+        return diffDays;
+    })() : 0;
     
     const totalLecturesCount = localSubject.totalLectures || 45; 
     const allLectures = Array.from({ length: totalLecturesCount }, (_, i) => i + 1);
@@ -85,16 +102,20 @@ export const SubjectDetailModal = ({ subject, onClose, onUpdate }) => {
                         <div className="text-xs text-gray-400 mt-2 flex items-center flex-wrap gap-4">
                             <div className="flex items-center gap-2">
                                 <span>Start Date:</span>
+                                {/* MODIFICATION 2: Uses type="date" for dropdown and simplifies save logic */}
                                 <input 
                                     type="date" 
+                                    // Value is correctly formatted as YYYY-MM-DD for the date input
                                     value={localSubject.startDate ? localSubject.startDate.split('T')[0] : ''}
                                     onChange={(e) =>  {
                                             const dateValue = e.target.value;
-                                            dispatch({ type: 'UPDATE_FIELD', field: 'startDate', value: dateValue ? new Date(dateValue + 'T00:00:00').toISOString() : null });
+                                            // Save the YYYY-MM-DD string directly, or null if the input is cleared
+                                            dispatch({ type: 'UPDATE_FIELD', field: 'startDate', value: dateValue || null });
                                         }}
                                     className="bg-white/10 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-sky-500"
                                 />
                             </div>
+                            {/* Time since calculation is now robust */}
                             {localSubject.startDate && timeSince >= 0 && <span className="text-teal-400">({timeSince} days ago)</span>}
                         </div>
                         <div className="text-xs text-gray-400 mt-2 flex items-center gap-2 group">
