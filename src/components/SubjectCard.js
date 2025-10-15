@@ -1,47 +1,89 @@
 import React from 'react';
-// Imports updated to use the 'src/' structure:
+import { FaLaptopCode, FaLink, FaCheckCircle } from 'react-icons/fa';
 import { getSubjectIcon } from '../utils/icons';
+// Assuming this utility exists to generate the SVG for the circular progress bar
 import { renderCircularProgressBar } from '../utils/progress';
 
 export const SubjectCard = ({ subject, index, onClick }) => {
-    // Ensure totalLectures is never zero or null to prevent division by zero in UI
+    // --- Data Calculation ---
     const totalLecturesCount = subject.totalLectures || 45; 
     const lectureProgress = totalLecturesCount > 0 ? (subject.completedLectures.length / totalLecturesCount) * 100 : 0;
     
-    // Ensure chapters.length is never zero
     const totalChaptersCount = subject.chapters.length;
     const completedChapters = subject.chapters.filter(c => c.completed).length;
     const chapterProgress = totalChaptersCount > 0 ? (completedChapters / totalChaptersCount) * 100 : 0;
     
-    const Icon = getSubjectIcon(subject.id);
+    // Get the icon component
+    const IconComponent = getSubjectIcon(subject.id) || FaLaptopCode;
+    const isComplete = lectureProgress >= 100;
+
+    // --- Dynamic Styles ---
+    const hoverBorder = isComplete ? 'hover:border-green-500/50' : 'hover:border-sky-500/50';
+    const hoverShadow = isComplete ? 'hover:shadow-green-500/30' : 'hover:shadow-sky-500/30';
 
     return (
         <div
-            data-subject-id={subject.id}
-            className="subject-card relative bg-gray-900/50 backdrop-blur-md border border-gray-200/10 rounded-2xl p-4 cursor-pointer shadow-lg flex flex-col justify-between transition-all duration-300 hover:scale-[1.03] hover:border-sky-400/50 hover:shadow-sky-400/10 overflow-hidden"
-            style={{ animationDelay: `${index * 60}ms` }}
             onClick={onClick}
+            className={`
+                subject-card relative 
+                bg-gray-900/50 backdrop-blur-sm 
+                border border-gray-700
+                rounded-2xl p-6 cursor-pointer 
+                flex flex-col justify-between 
+                transition-all duration-300 
+                transform hover:scale-[1.03] 
+                ${hoverBorder} ${hoverShadow} 
+                shadow-xl group
+            `}
+            style={{ animationDelay: `${index * 60}ms` }}
         >
-            <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-300">
-                {Icon && <Icon className="w-full h-full scale-125 text-gray-500" />}
+            {/* 1. Subject Header */}
+            <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center">
+                    <IconComponent className="w-6 h-6 text-sky-400 flex-shrink-0 mr-3 transition-transform duration-300 group-hover:scale-110" />
+                    <h3 className="font-header font-bold text-lg text-white truncate leading-tight">
+                        {subject.name}
+                    </h3>
+                </div>
             </div>
-            <div className="relative flex-grow flex flex-col">
-                <h3 className="font-semibold text-lg text-gray-100 mb-3 truncate">{subject.name}</h3>
-                <div className="flex items-center justify-center my-4">
-                    <div dangerouslySetInnerHTML={{ __html: renderCircularProgressBar(lectureProgress) }} />
+            
+            {/* 2. Main Circular Progress (Lectures) */}
+            <div className="flex items-center justify-center my-4">
+                {/* Dangerously set the HTML for the Circular Progress Bar 
+                    This ensures the glow and SVG are rendered correctly.
+                */}
+                <div dangerouslySetInnerHTML={{ __html: renderCircularProgressBar(lectureProgress, isComplete) }} />
+            </div>
+            
+            {/* 3. Chapter Progress Bar */}
+            <div className="relative z-10 pt-4 border-t border-gray-700/50 mt-4">
+                <div className="flex justify-between text-sm font-medium text-gray-400 mb-1">
+                    <span>Chapters</span>
+                    <span className="text-white font-bold">
+                        {completedChapters}/{totalChaptersCount}
+                    </span>
                 </div>
-                <div>
-                    <div className="flex justify-between text-xs text-gray-400 mb-1">
-                        <span>Chapters</span>
-                        <span>{completedChapters}/{totalChaptersCount}</span>
-                    </div>
-                    <div className="w-full bg-gray-200/10 rounded-full h-1.5">
-                        <div 
-                            className="bg-teal-400 h-1.5 rounded-full progress-glow glow-teal transition-all duration-500 ease-out" 
-                            style={{ width: `${chapterProgress}%` }}
-                        ></div>
-                    </div>
+                
+                <div className="w-full bg-gray-700/70 rounded-full h-2.5 overflow-hidden">
+                    <div 
+                        className="h-full rounded-full bg-indigo-500 transition-all duration-700 ease-out progress-glow glow-teal" 
+                        style={{ width: `${chapterProgress}%` }}
+                    />
                 </div>
+            </div>
+            
+            {/* 4. Status Badge (Footer) */}
+            <div className="relative z-10 pt-4 flex justify-end">
+                {isComplete ? (
+                    <span className="flex items-center text-sm font-semibold text-green-400">
+                        <FaCheckCircle className="mr-1.5 w-4 h-4" />
+                        Completed
+                    </span>
+                ) : (
+                    <span className="text-sm font-semibold text-gray-500">
+                        In Progress
+                    </span>
+                )}
             </div>
         </div>
     );

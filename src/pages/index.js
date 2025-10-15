@@ -1,16 +1,20 @@
-// pages/index.js (Modified for IndexedDB)
-
-// REMOVE: import { supabase } from '../lib/supabaseClient'; 
-// REMOVE: import { AuthForm } from '../components/AuthForm';
+// pages/index.js (Redesigned UI - V3 with User's Specific Icons)
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Head from 'next/head';
-import { FaPlus, FaTrash, FaLink, FaChevronDown, FaChevronUp, FaLinkedin, FaGithub, FaTimes, FaSignOutAlt } from 'react-icons/fa';
+import { 
+    FaPlus, FaTrash, FaLink, FaChevronDown, FaChevronUp, FaLinkedin, 
+    FaGithub, FaTimes, FaSignOutAlt, FaCalendarAlt, FaTachometerAlt, 
+    FaCog, FaBook, FaGlobe, FaBezierCurve, FaLaptopCode, FaDatabase, 
+    FaNetworkWired, FaMicrochip, FaTerminal, FaCodeBranch, FaShieldAlt
+} from 'react-icons/fa'; 
+import { BsLayersFill } from "react-icons/bs"; // NEW: Import BsLayersFill
+
 // Imports updated to use the 'src/' structure (assuming components/ and utils/ are under src/)
 import { SubjectCard } from '../components/SubjectCard';
 import { SubjectDetailModal } from '../components/SubjectDetailModal';
 import { GateYearModal } from '../components/GateYearModal';
-import { getSubjectIcon } from '../utils/icons';
+import { getSubjectIcon } from '../utils/icons'; 
 
 // NEW IMPORT for IndexedDB
 import { saveSubjects, loadSubjects, saveTargetYear, loadTargetYear } from '../utils/idb';
@@ -36,11 +40,8 @@ const getInitialSubjects = () => [
 ];
 // --- End UTILITY FUNCTIONS ---
 
-// CountdownTimer component is unchanged (omitted for brevity)
-// ... (Your original CountdownTimer logic) ...
+// --- CountdownTimer Component (UNCHANGED) ---
 const CountdownTimer = ({ targetYear }) => {
-    // ... (Your original CountdownTimer logic) ...
-    // Note: This component is fully contained and works as before.
     const targetDate = useMemo(() => {
         return targetYear ? new Date(`${targetYear}-02-01T00:00:00`) : null;
     }, [targetYear]);
@@ -73,33 +74,44 @@ const CountdownTimer = ({ targetYear }) => {
     }, [calculateTimeLeft, targetDate]);
 
     if (!targetYear || !targetDate) {
-        return null;
+        return (
+            <div className="p-4 bg-gray-800/50 rounded-lg shadow-xl border border-gray-700">
+                <p className="text-sm text-gray-400 flex items-center">
+                    <FaCalendarAlt className="mr-2 text-red-400" /> 
+                    Target year not set. Click 'Settings' to begin.
+                </p>
+            </div>
+        );
     }
     
     const timeComponents = [
-        { l: 'Days', v: timeLeft.d },
-        { l: 'Hours', v: timeLeft.h },
-        { l: 'Minutes', v: timeLeft.m },
-        { l: 'Seconds', v: timeLeft.s },
+        { l: 'DAYS', v: timeLeft.d },
+        { l: 'HRS', v: timeLeft.h },
+        { l: 'MIN', v: timeLeft.m },
+        { l: 'SEC', v: timeLeft.s },
     ];
 
     if (timeLeft.d === undefined) {
         return (
-            <div className="text-center my-8 p-4 bg-gray-900/50 backdrop-blur-md border border-gray-200/10 rounded-xl">
-                <h3 className="text-lg font-semibold text-gray-300 mb-3 font-header">Time Remaining for GATE {targetYear}</h3>
-                <span className="text-lg text-white">The exam date has passed.</span>
+            <div className="p-4 bg-gray-800/50 rounded-lg shadow-xl border border-gray-700">
+                <h3 className="text-lg font-semibold text-red-400 mb-1">GATE {targetYear}</h3>
+                <span className="text-sm text-gray-300">The examination date has passed. Great job!</span>
             </div>
         );
     }
 
     return (
-        <div className="text-center my-8 p-4 bg-gray-900/50 backdrop-blur-md border border-gray-200/10 rounded-xl">
-            <h3 className="text-lg font-semibold text-gray-300 mb-3 font-header">Time Remaining for GATE {targetYear}</h3>
-            <div id="countdown-timer" className="flex justify-center gap-4 text-white">
+        <div className="p-4 bg-gray-800/50 rounded-lg shadow-xl border border-gray-700">
+            <h3 className="text-xs uppercase font-semibold text-gray-400 mb-3">
+                GATE {targetYear} Countdown
+            </h3>
+            <div id="countdown-timer" className="flex justify-between items-center text-white">
                 {timeComponents.map((c, index) => (
-                    <div key={index} className="text-center">
-                        <div className="text-3xl font-bold text-sky-300">{String(c.v).padStart(2, '0')}</div>
-                        <div className="text-xs text-gray-400">{c.l}</div>
+                    <div key={index} className="text-center w-1/4">
+                        <div className="text-3xl lg:text-4xl font-mono font-extrabold text-cyan-400 leading-none">
+                            {String(c.v).padStart(2, '0')}
+                        </div>
+                        <div className="text-xs uppercase text-gray-500 mt-1">{c.l}</div>
                     </div>
                 ))}
             </div>
@@ -109,7 +121,7 @@ const CountdownTimer = ({ targetYear }) => {
 // --- End CountdownTimer ---
 
 
-// --- Main App Component (MODIFIED) ---
+// --- Main App Component (MODIFIED with new UI structure) ---
 export default function Home() {
     const [subjects, setSubjects] = useState([]);
     const [targetYear, setTargetYear] = useState(null);
@@ -117,26 +129,22 @@ export default function Home() {
     const [isLoading, setIsLoading] = useState(true);
     const [showYearModal, setShowYearModal] = useState(false);
     
-    // 1. Initial Data Loading (Replaces localStorage/Supabase load)
+    // 1. Initial Data Loading (IndexedDB)
     useEffect(() => {
         async function loadInitialData() {
             try {
-                // Load Subjects
                 const savedSubjects = await loadSubjects();
                 const initialSubjects = savedSubjects || getInitialSubjects();
                 setSubjects(initialSubjects);
                 
-                // Load Target Year
                 const savedYear = await loadTargetYear();
                 setTargetYear(savedYear);
                 
-                // Show modal if year isn't set
                 if (!savedYear) {
                     setShowYearModal(true);
                 }
             } catch (error) {
                 console.error("Error loading data from IndexedDB:", error);
-                // Fallback to initial subjects if DB fails
                 setSubjects(getInitialSubjects());
                 setShowYearModal(true);
             } finally {
@@ -145,7 +153,7 @@ export default function Home() {
         }
         
         loadInitialData();
-    }, []); // Run only once on mount
+    }, []); 
 
 
     // 2. Update Handler - updates state and saves to IndexedDB
@@ -153,7 +161,6 @@ export default function Home() {
         setSubjects(prevSubjects => {
             const newSubjects = prevSubjects.map(s => s.id === updatedSubject.id ? updatedSubject : s);
             
-            // Immediately save the new state to IndexedDB
             saveSubjects(newSubjects).catch(err => {
                 console.error("Error saving subjects to IndexedDB:", err);
             });
@@ -167,20 +174,25 @@ export default function Home() {
         setTargetYear(year);
         setShowYearModal(false);
         
-        // Save the new target year to IndexedDB
         saveTargetYear(year).catch(err => {
             console.error("Error saving target year to IndexedDB:", err);
         });
     }, []);
     
     // Calculate Overall Progress (Derived State - UNCHANGED)
-    const { totalLectures, totalCompletedLectures, globalProgress } = useMemo(() => {
+    const { totalLectures, totalCompletedLectures, globalProgress, completedSubjectsCount } = useMemo(() => {
         const total = subjects.reduce((acc, s) => acc + (s.totalLectures || 0), 0);
         const completed = subjects.reduce((acc, s) => acc + s.completedLectures.length, 0);
+        
+        const completedSubs = subjects.filter(s => 
+            s.totalLectures > 0 && s.completedLectures.length >= s.totalLectures
+        ).length;
+        
         return { 
             totalLectures: total, 
             totalCompletedLectures: completed, 
-            globalProgress: total > 0 ? (completed / total) * 100 : 0 
+            globalProgress: total > 0 ? (completed / total) * 100 : 0,
+            completedSubjectsCount: completedSubs,
         };
     }, [subjects]);
 
@@ -189,19 +201,22 @@ export default function Home() {
     // --- Conditional Rendering ---
     if (isLoading) {
         return (
-            <div className="bg-[#0a0a0a] min-h-screen flex items-center justify-center">
-                <div className="text-center text-gray-400 py-20">Loading your local progress...</div>
+            <div className="bg-[#0f172a] min-h-screen flex items-center justify-center">
+                <div className="text-center text-cyan-400 py-20 text-lg">
+                    <FaTachometerAlt className="animate-spin inline-block mr-2" />
+                    Loading Local Progress...
+                </div>
             </div>
         );
     }
 
     // Main App View
     return (
-        <div className="bg-transparent text-gray-100 selection:bg-sky-500/30 min-h-screen relative">
+        <div className="bg-[#0f172a] text-gray-100 selection:bg-cyan-600/50 min-h-screen relative font-sans">
             <Head>
-                <title>GATE CSE Syllabus Tracker</title>
+                <title>GATE CSE Dashboard</title>
             </Head>
-            {/* ... (Your original global style block) ... */}
+            {/* Global Styles for the new aesthetic */}
             <style jsx global>{`
                 :root {
                     --font-header: 'Sora', sans-serif;
@@ -209,98 +224,161 @@ export default function Home() {
                 }
                 body {
                     font-family: var(--font-body);
-                    background-color: #0a0a0a;
+                    background-color: #0f172a; /* Slate-900 */
                 }
                 .font-header {
                     font-family: var(--font-header);
                 }
-                .scrollbar-thin { scrollbar-width: thin; scrollbar-color: #374151 #111827; }
+                .scrollbar-thin { scrollbar-width: thin; scrollbar-color: #334155 #0f172a; }
                 .scrollbar-thin::-webkit-scrollbar { width: 8px; }
-                .scrollbar-thin::-webkit-scrollbar-track { background: #111827; }
-                .scrollbar-thin::-webkit-scrollbar-thumb { background-color: #374151; border-radius: 20px; border: 3px solid #111827; }
-
-                @keyframes pan-overlay {
-                    from { background-position: 0% 0%; }
-                    to { background-position: 0% -200%; }
-                }
-                .radiant-bg-container::before {
-                    animation: pan-overlay 35s linear infinite;
-                    background-image: radial-gradient(circle at 25% 25%, #38bdf8 0%, #3b82f6 25%, #1d4ed8 50%, #1e3a8a 100%);
-                    background-size: 400% 400%;
-                    content: "";
-                    inset: 0;
-                    opacity: 0.15;
-                    pointer-events: none;
-                    position: fixed;
-                    z-index: -1;
-                    filter: blur(120px);
-                }
+                .scrollbar-thin::-webkit-scrollbar-track { background: #0f172a; }
+                .scrollbar-thin::-webkit-scrollbar-thumb { background-color: #334155; border-radius: 20px; border: 3px solid #0f172a; }
                 
-                input[type='number']::-webkit-inner-spin-button,
-                input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-                input[type='number'] { -moz-appearance: textfield; }
-                .progress-glow {
-                    filter: drop-shadow(0 0 6px var(--glow-color));
+                /* Darker, subtle background pattern/glow */
+                .radiant-bg-container::before {
+                    content: "";
+                    position: fixed;
+                    inset: 0;
+                    opacity: 0.1;
+                    background-image: radial-gradient(circle at 10% 10%, #06b6d4 0%, transparent 20%), 
+                                      radial-gradient(circle at 90% 90%, #6366f1 0%, transparent 20%);
+                    background-size: 100% 100%;
+                    pointer-events: none;
+                    z-index: -1;
+                    filter: blur(150px);
                 }
-                .glow-sky { --glow-color: #38bdf880; }
-                .glow-teal { --glow-color: #2dd4bf80; }
+                .progress-ring-circle { transition: stroke-dashoffset 0.5s ease-out; }
+
             `}</style>
 
             <div className="radiant-bg-container"></div>
 
-            <div id="app-root" className="relative z-10 container mx-auto px-4 py-6">
-                <header className="text-center my-8">
-                    {/* The sign-out button and user email display are removed since there is no server-side user/auth */}
-                    <h1 className="text-4xl font-header font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-sky-300 to-blue-500">
-                        GATE CSE Syllabus Tracker
+            <div id="app-root" className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* --- HEADER / TOP SECTION --- */}
+                <header className="flex justify-between items-center mb-8 pb-4 border-b border-gray-800">
+                    <h1 className="text-3xl font-header font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-indigo-500">
+                        GATE CSE TRACKER <span className='text-sm text-gray-500 ml-2'>v1.0</span>
                     </h1>
-                    <button onClick={() => setShowYearModal(true)} className="mt-2 text-sky-400 hover:text-sky-300 text-sm">
-                        {targetYear ? `Targeting GATE ${targetYear}` : 'Set Target Year'}
+                    
+                    <button 
+                        onClick={() => setShowYearModal(true)} 
+                        className="flex items-center text-sm font-medium px-3 py-1.5 rounded-full bg-indigo-500 hover:bg-indigo-600 transition-colors text-white shadow-lg shadow-indigo-500/30"
+                        title="Change Target Year"
+                    >
+                        <FaCog className="mr-2" />
+                        Settings
                     </button>
                 </header>
 
-                <CountdownTimer targetYear={targetYear} />
-
-                <div className="my-8 px-2">
-                    <div className="flex justify-between items-center mb-2 text-sm text-gray-400">
-                        <span>{totalCompletedLectures} / {totalLectures} Lectures</span>
-                        <span>Overall Progress</span>
+                {/* --- DASHBOARD SUMMARY ROW --- */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+                    
+                    {/* 1. Countdown Widget */}
+                    <div className="lg:col-span-1">
+                        <CountdownTimer targetYear={targetYear} />
                     </div>
-                    <div className="w-full bg-gray-900/50 rounded-full h-4 p-1 border border-gray-200/10 shadow-inner">
-                        <div className="relative w-full h-full">
-                            <div
-                                className="bg-gradient-to-r from-teal-400 to-sky-500 h-full rounded-full progress-glow glow-sky transition-all duration-500 ease-out"
-                                style={{ width: `${globalProgress}%` }}
-                            ></div>
-                            <span className="absolute inset-0 text-xs font-bold flex items-center justify-center text-white mix-blend-difference">
-                                {Math.round(globalProgress)}% Complete
-                            </span>
+
+                    {/* 2. Overall Progress Gauge (Redesigned Visualization) */}
+                    <div className="lg:col-span-2 p-6 bg-gray-800/50 rounded-lg shadow-xl border border-gray-700 flex items-center justify-between">
+                        
+                        <div className="flex items-center">
+                            {/* SVG Progress Ring */}
+                            <div className="relative w-24 h-24 sm:w-32 sm:h-32 mr-6 flex-shrink-0">
+                                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                                    <circle 
+                                        cx="50" cy="50" r="45" 
+                                        fill="none" 
+                                        stroke="#1e293b" // Base color (slate-800)
+                                        strokeWidth="10"
+                                    />
+                                    <circle 
+                                        cx="50" cy="50" r="45" 
+                                        fill="none" 
+                                        stroke="#06b6d4" // Active color (cyan-500)
+                                        strokeWidth="10"
+                                        strokeLinecap="round"
+                                        className="progress-ring-circle"
+                                        style={{
+                                            strokeDasharray: 283, // 2 * pi * 45
+                                            strokeDashoffset: 283 - (globalProgress / 100) * 283
+                                        }}
+                                    />
+                                </svg>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-xl sm:text-3xl font-mono font-bold text-cyan-400">
+                                        {Math.round(globalProgress)}%
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Progress Details */}
+                            <div>
+                                <h2 className="text-xl sm:text-2xl font-header font-bold mb-1 text-white">
+                                    Overall Syllabus Progress
+                                </h2>
+                                <p className="text-sm text-gray-400">
+                                    <span className="font-semibold text-cyan-300">{totalCompletedLectures}</span> / {totalLectures} Lectures Completed
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    <span className="font-semibold text-white">{completedSubjectsCount}</span> / {subjects.length} Subjects Fully Covered
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <main className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {subjects.map((subject, index) => (
-                        <SubjectCard
-                            key={subject.id}
-                            subject={subject}
-                            index={index}
-                            onClick={() => setSelectedSubjectId(subject.id)}
-                        />
-                    ))}
+                {/* --- SUBJECTS GRID --- */}
+                <main className="mb-12">
+                    <h2 className="text-xl font-header font-semibold mb-6 text-gray-300 flex items-center border-b border-gray-800 pb-2">
+                        {/* Using FaBook as a general icon for the subject list section */}
+                        <FaBook className="mr-2 text-indigo-400"/> Core Subjects
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {/* The subject card will now use the specific icons you defined */}
+                        {subjects.map((subject, index) => (
+                            <SubjectCard
+                                key={subject.id}
+                                subject={subject}
+                                index={index}
+                                onClick={() => setSelectedSubjectId(subject.id)}
+                            />
+                        ))}
+                    </div>
                 </main>
             
-                <footer className="relative z-10 container mx-auto px-4 py-8 mt-12 text-center text-gray-500 border-t border-gray-200/10">
-                    <div className="flex justify-center items-center gap-4 mb-2">
-                        <a href="https://www.linkedin.com/in/aayush-rai-7334262a9/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">
-                            <FaLinkedin className="w-6 h-6" />
-                        </a>
-                        <a href="https://github.com/iyusshh" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">
-                            <FaGithub className="w-6 h-6" />
-                        </a>
-                    </div>
-                    <p>Made by Aayush Rai</p>
-                </footer>
+                {/* --- FOOTER --- */}
+                <footer className="relative z-10 max-w-7xl mx-auto px-4 py-6 mt-12 text-center text-gray-600 border-t border-gray-800">
+  <div className="flex justify-center items-center gap-6 mb-2">
+    <a
+      href="https://www.linkedin.com/in/aayush-rai-7334262a9/"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="hover:text-blue-400 transition-colors"
+      aria-label="LinkedIn Profile"
+    >
+      <FaLinkedin className="w-5 h-5" />
+    </a>
+
+    {/* GitHub icon with green hover and scale effect */}
+    <a
+      href="https://github.com/iyusshh"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-gray-600 hover:text-green-400 transform hover:scale-110 transition-all duration-300 ease-in-out"
+      aria-label="GitHub Profile"
+    >
+      <FaGithub className="w-5 h-5" />
+    </a>
+  </div>
+
+  <p className="text-sm">
+    Developed by Aayush Rai
+  </p>
+  <p className="text-xs mt-1 text-gray-700">
+    Data stored locally using IndexedDB
+  </p>
+</footer>
+
             </div>
 
             {/* Modals are rendered conditionally based on state */}
@@ -308,13 +386,13 @@ export default function Home() {
                 <SubjectDetailModal
                     subject={selectedSubject}
                     onClose={() => setSelectedSubjectId(null)}
-                    onUpdate={updateSubject} // This now triggers IndexedDB save
+                    onUpdate={updateSubject} // Triggers IndexedDB save
                 />
             )}
             
             {showYearModal && (
                 <GateYearModal
-                    onSetYear={updateTargetYear} // This now triggers IndexedDB save
+                    onSetYear={updateTargetYear} // Triggers IndexedDB save
                     onClose={() => setShowYearModal(false)}
                 />
             )}

@@ -1,41 +1,54 @@
-// Function to render the Circular Progress Bar as an SVG string
-// This is done this way to directly reuse the original logic and styles via dangerouslySetInnerHTML.
-export function renderCircularProgressBar(progress, size = 80, strokeWidth = 8) {
-    const center = size / 2;
-    const radius = center - strokeWidth / 2;
+export const renderCircularProgressBar = (percentage, isComplete = false) => {
+    const radius = 40;
     const circumference = 2 * Math.PI * radius;
-    // progress is clamped between 0 and 100 for safety
-    const safeProgress = Math.max(0, Math.min(100, progress)); 
-    const offset = circumference - (safeProgress / 100) * circumference;
+    const offset = circumference - (percentage / 100) * circumference;
+
+    // Define colors for the ring and the glow effect
+    const color = isComplete ? '#10B981' : '#38BDF8'; // Green for complete, Sky Blue otherwise
+    const trailColor = '#3741514D'; // Dark gray/transparent for the background ring
+    const glowColor = isComplete ? '#10B98180' : '#38BDF880';
 
     return `
-        <div class="relative" style="width:${size}px;height:${size}px">
-            <svg class="w-full h-full -rotate-90" viewBox="0 0 ${size} ${size}">
-                <circle 
-                    class="text-gray-200/10" 
-                    stroke="currentColor" 
-                    stroke-width="${strokeWidth}" 
-                    fill="transparent" 
-                    r="${radius}" 
-                    cx="${center}" 
-                    cy="${center}"
-                />
-                <circle 
-                    class="text-sky-400 progress-glow glow-sky" 
-                    stroke="currentColor" 
-                    stroke-width="${strokeWidth}" 
-                    stroke-linecap="round" 
-                    fill="transparent" 
-                    r="${radius}" 
-                    cx="${center}" 
-                    cy="${center}" 
-                    stroke-dasharray="${circumference}" 
-                    style="transition:stroke-dashoffset .5s ease-out;stroke-dashoffset:${offset}"
-                />
-            </svg>
-            <div class="absolute inset-0 flex items-center justify-center">
-                <span class="text-lg font-medium text-gray-200">${Math.round(safeProgress)}%</span>
-            </div>
-        </div>
+        <svg 
+            viewBox="0 0 100 100" 
+            class="w-32 h-32 transform -rotate-90 transition-transform duration-300 group-hover:scale-[1.02]"
+            style="overflow: visible;"
+        >
+            <!-- Background ring (Transparent) -->
+            <circle
+                cx="50" cy="50" r="${radius}"
+                stroke-width="8"
+                stroke="${trailColor}"
+                fill="none"
+                class="transition-all duration-500"
+            />
+            
+            <!-- Progress ring (Glowing) -->
+            <circle
+                cx="50" cy="50" r="${radius}"
+                stroke-width="8"
+                stroke="${color}"
+                fill="none"
+                stroke-linecap="round"
+                stroke-dasharray="${circumference} ${circumference}"
+                stroke-dashoffset="${offset}"
+                style="
+                    transition: stroke-dashoffset 0.5s ease-out, stroke 0.3s ease-out;
+                    /* Add glowing filter */
+                    filter: drop-shadow(0 0 8px ${glowColor});
+                "
+            />
+            
+            <!-- Percentage Text (Rotated back) -->
+            <text
+                x="50%" y="50%"
+                dominant-baseline="middle"
+                text-anchor="middle"
+                class="fill-white font-header font-extrabold text-xl"
+                transform="rotate(90 50 50)"
+            >
+                ${Math.round(percentage)}%
+            </text>
+        </svg>
     `;
-}
+};
