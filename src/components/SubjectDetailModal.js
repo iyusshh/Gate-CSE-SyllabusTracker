@@ -1,246 +1,316 @@
 import React, { useState, useReducer, useEffect } from 'react';
-import { FaPlus, FaTrash, FaLink, FaChevronDown, FaChevronUp, FaTimes } from 'react-icons/fa';
+
+// --- Inline SVG Icon Definitions (Replacement for react-icons/fa) ---
+
+// Plus Icon (FaPlus)
+const PlusIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"></line>
+    <line x1="5" y1="12" x2="19" y2="12"></line>
+  </svg>
+);
+
+// Trash Icon (FaTrash)
+const TrashIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"></polyline>
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+    <line x1="10" y1="11" x2="10" y2="17"></line>
+    <line x1="14" y1="11" x2="14" y2="17"></line>
+  </svg>
+);
+
+// Link Icon (FaLink)
+const LinkIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+  </svg>
+);
+
+// Chevron Down Icon (FaChevronDown)
+const ChevronDownIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9"></polyline>
+  </svg>
+);
+
+// Chevron Up Icon (FaChevronUp)
+const ChevronUpIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="18 15 12 9 6 15"></polyline>
+  </svg>
+);
+
+// Times Icon (FaTimes)
+const TimesIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"></line>
+    <line x1="6" y1="6" x2="18" y2="18"></line>
+  </svg>
+);
+
+// --- Component Logic ---
 
 const subjectReducer = (state, action) => {
-    switch (action.type) {
-        case 'UPDATE_FIELD':
-            return { ...state, [action.field]: action.value };
-        case 'ADD_CHAPTER':
-            return { ...state, chapters: [...state.chapters, { id: Math.random().toString(36).substr(2, 9), name: 'New Chapter', completed: false }] };
-        case 'REMOVE_CHAPTER':
-            return { ...state, chapters: state.chapters.filter(c => c.id !== action.id) };
-        case 'TOGGLE_CHAPTER':
-            return { ...state, chapters: state.chapters.map(c => c.id === action.id ? { ...c, completed: action.completed } : c) };
-        case 'EDIT_CHAPTER_NAME':
-            return { ...state, chapters: state.chapters.map(c => c.id === action.id ? { ...c, name: action.name } : c) };
-        case 'TOGGLE_LECTURE':
-            let completed = new Set(state.completedLectures);
-            if (action.checked) {
-                for (let i = 1; i <= action.number; i++) completed.add(i);
-            } else {
-                for (let i = action.number; i <= state.totalLectures; i++) completed.delete(i);
-                
-            }
-            return { ...state, completedLectures: Array.from(completed).sort((a,b) => a - b) };
-        case 'CLEAR_COMPLETED_LECTURES':
-            return { ...state, completedLectures: [] };
-        default:
-            return state;
-    }
+    switch (action.type) {
+        case 'UPDATE_FIELD':
+            return { ...state, [action.field]: action.value };
+        case 'ADD_CHAPTER':
+            // Ensure chapters is an array before appending
+            return { ...state, chapters: [...(state.chapters || []), { id: Math.random().toString(36).substr(2, 9), name: 'New Chapter', completed: false }] };
+        case 'REMOVE_CHAPTER':
+            // Ensure chapters is an array before filtering
+            return { ...state, chapters: (state.chapters || []).filter(c => c.id !== action.id) };
+        case 'TOGGLE_CHAPTER':
+            // Ensure chapters is an array before mapping
+            return { ...state, chapters: (state.chapters || []).map(c => c.id === action.id ? { ...c, completed: action.completed } : c) };
+        case 'EDIT_CHAPTER_NAME':
+            // Ensure chapters is an array before mapping
+            return { ...state, chapters: (state.chapters || []).map(c => c.id === action.id ? { ...c, name: action.name } : c) };
+        case 'TOGGLE_LECTURE':
+            // Use safe access when creating the Set
+            let completed = new Set(state.completedLectures || []);
+            if (action.checked) {
+                for (let i = 1; i <= action.number; i++) completed.add(i);
+            } else {
+                for (let i = action.number; i <= state.totalLectures; i++) completed.delete(i);
+                
+            }
+            return { ...state, completedLectures: Array.from(completed).sort((a,b) => a - b) };
+        case 'CLEAR_COMPLETED_LECTURES':
+            return { ...state, completedLectures: [] };
+        default:
+            return state;
+    }
 };
 
 const LectureToggle = ({ number, isCompleted, onToggle }) => (
-    <label>
-        <input 
-            type="checkbox" 
-            className="hidden peer" 
-            checked={isCompleted} 
-            onChange={(e) => onToggle(number, e.target.checked)}
-        />
-        <span className={`w-10 h-10 flex items-center justify-center rounded-md text-sm cursor-pointer transition-all ${isCompleted ? 'bg-teal-500 text-white hover:opacity-80' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
-            {number}
-        </span>
-    </label>
+    <label>
+        <input 
+            type="checkbox" 
+            className="hidden peer" 
+            checked={isCompleted} 
+            onChange={(e) => onToggle(number, e.target.checked)}
+        />
+        <span className={`w-10 h-10 flex items-center justify-center rounded-md text-sm cursor-pointer transition-all ${isCompleted ? 'bg-teal-500 text-white hover:opacity-80' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+            {number}
+        </span>
+    </label>
 );
 
 export const SubjectDetailModal = ({ subject, onClose, onUpdate }) => {
-    const [localSubject, dispatch] = useReducer(subjectReducer, subject);
-    const [lectureInputValue, setLectureInputValue] = useState(localSubject.totalLectures.toString());
+    // Use safe default for totalLectures in case the initial subject prop is missing it for some reason
+    const safeInitialSubject = {
+        ...subject,
+        chapters: subject.chapters || [],
+        completedLectures: subject.completedLectures || [],
+        totalLectures: subject.totalLectures || 45
+    };
+    
+    const [localSubject, dispatch] = useReducer(subjectReducer, safeInitialSubject);
+    
+    // Guard initialization of state based on totalLectures
+    const [lectureInputValue, setLectureInputValue] = useState(localSubject.totalLectures.toString());
+    
     useEffect(() => {
-        setLectureInputValue(localSubject.totalLectures.toString());
-    }, [localSubject.totalLectures]);
+        setLectureInputValue(localSubject.totalLectures.toString());
+    }, [localSubject.totalLectures]);
+    
     const [showCompletedLectures, setShowCompletedLectures] = useState(false);
 
-    useEffect(() => {
-        onUpdate(localSubject);
-    }, [localSubject, onUpdate]);
+    useEffect(() => {
+        onUpdate(localSubject);
+    }, [localSubject, onUpdate]);
 
-    // MODIFICATION 1: Robust calculation for days since start date (fixes timezone bugs)
-    const timeSince = localSubject.startDate ? (() => {
-        // Use the YYYY-MM-DD portion of the stored date string
-        const dateStr = localSubject.startDate.split('T')[0];
-        
-        // Create Date objects, forcing them to a consistent starting point (midnight) 
-        // to ensure Math.floor/Math.abs calculates full day differences.
-        const start = new Date(dateStr); 
-        const today = new Date();
-        
-        today.setHours(0, 0, 0, 0);
-        start.setHours(0, 0, 0, 0);
+    // MODIFICATION 1: Robust calculation for days since start date (fixes timezone bugs)
+    const timeSince = localSubject.startDate ? (() => {
+        // Use the YYYY-MM-DD portion of the stored date string
+        const dateStr = localSubject.startDate.split('T')[0];
+        
+        // Create Date objects, forcing them to a consistent starting point (midnight) 
+        // to ensure Math.floor/Math.abs calculates full day differences.
+        const start = new Date(dateStr); 
+        const today = new Date();
+        
+        today.setHours(0, 0, 0, 0);
+        start.setHours(0, 0, 0, 0);
 
-        const diffTime = today.getTime() - start.getTime();
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
-        
-        return diffDays;
-    })() : 0;
+        const diffTime = today.getTime() - start.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+        
+        return diffDays;
+    })() : 0;
+    
+    const totalLecturesCount = localSubject.totalLectures || 45; 
+    const allLectures = Array.from({ length: totalLecturesCount }, (_, i) => i + 1);
     
-    const totalLecturesCount = localSubject.totalLectures || 45; 
-    const allLectures = Array.from({ length: totalLecturesCount }, (_, i) => i + 1);
-    const completedLecturesSet = new Set(localSubject.completedLectures);
+    // ✅ FIX 3: Crucial fix for the TypeError, ensuring new Set() always receives an array.
+    const completedLecturesSet = new Set(localSubject.completedLectures || []);
 
-    const uncompletedLectures = allLectures.filter(l => !completedLecturesSet.has(l));
-    const completedLectures = allLectures.filter(l => completedLecturesSet.has(l));
-    
-    const handleToggleLecture = (number, checked) => {
-        dispatch({ type: 'TOGGLE_LECTURE', number, checked });
-    };
+    const uncompletedLectures = allLectures.filter(l => !completedLecturesSet.has(l));
+    const completedLectures = allLectures.filter(l => completedLecturesSet.has(l));
+    
+    const handleToggleLecture = (number, checked) => {
+        dispatch({ type: 'TOGGLE_LECTURE', number, checked });
+    };
 
-    const handleToggleChapter = (chapterId, completed) => {
-        dispatch({ type: 'TOGGLE_CHAPTER', id: chapterId, completed });
-    };
+    const handleToggleChapter = (chapterId, completed) => {
+        dispatch({ type: 'TOGGLE_CHAPTER', id: chapterId, completed });
+    };
 
-    const handleChapterNameChange = (chapterId, name) => {
-        dispatch({ type: 'EDIT_CHAPTER_NAME', id: chapterId, name });
-    };
+    const handleChapterNameChange = (chapterId, name) => {
+        dispatch({ type: 'EDIT_CHAPTER_NAME', id: chapterId, name });
+    };
 
-    return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
-            <div className="bg-gray-800/80 backdrop-blur-xl border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl transition-all duration-350 transform scale-100">
-                <header className="flex items-start justify-between p-4 border-b border-white/10">
-                    <div>
-                        <h2 className="text-xl font-bold text-white font-header">{localSubject.name}</h2>
-                        <div className="text-xs text-gray-400 mt-2 flex items-center flex-wrap gap-4">
-                            <div className="flex items-center gap-2">
-                                <span>Start Date:</span>
-                                {/* MODIFICATION 2: Uses type="date" for dropdown and simplifies save logic */}
-                                <input 
-                                    type="date" 
-                                    // Value is correctly formatted as YYYY-MM-DD for the date input
-                                    value={localSubject.startDate ? localSubject.startDate.split('T')[0] : ''}
-                                    onChange={(e) =>  {
-                                            const dateValue = e.target.value;
-                                            // Save the YYYY-MM-DD string directly, or null if the input is cleared
-                                            dispatch({ type: 'UPDATE_FIELD', field: 'startDate', value: dateValue || null });
-                                        }}
-                                    className="bg-white/10 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-sky-500"
-                                />
-                            </div>
-                            {/* Time since calculation is now robust */}
-                            {localSubject.startDate && timeSince >= 0 && <span className="text-teal-400">({timeSince} days ago)</span>}
-                        </div>
-                        <div className="text-xs text-gray-400 mt-2 flex items-center gap-2 group">
-                            <a href={localSubject.courseLink} target="_blank" rel="noopener noreferrer" className={`hover:text-sky-400 ${localSubject.courseLink ? '' : 'pointer-events-none'}`}>
-                                <FaLink className="h-4 w-4" />
-                            </a>
-                            <input 
-                                type="text" 
-                                placeholder="Paste course link here..." 
-                                value={localSubject.courseLink || ''}
-                                onChange={(e) => dispatch({ type: 'UPDATE_FIELD', field: 'courseLink', value: e.target.value })}
-                                className="bg-white/10 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-sky-500 w-48"
-                            />
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10">
-                        <FaTimes className="w-6 h-6" />
-                    </button>
-                </header>
-                <main className="p-6 overflow-y-auto flex-grow scrollbar-thin">
-                    <section className="mb-6">
-                        <h3 className="font-semibold text-lg text-gray-200 mb-3">Chapters</h3>
-                        <div className="space-y-2">
-                            {localSubject.chapters.map((chapter) => (
-                                <div key={chapter.id} className="flex items-center bg-white/5 p-2 rounded-lg group">
-                                    <input 
-                                        type="checkbox" 
-                                        checked={chapter.completed}
-                                        onChange={(e) => handleToggleChapter(chapter.id, e.target.checked)}
-                                        className="h-5 w-5 rounded bg-gray-700 border-gray-600 text-sky-400 focus:ring-sky-500 cursor-pointer" 
-                                    />
-                                    <input 
-                                        type="text" 
-                                        value={chapter.name}
-                                        onChange={(e) => handleChapterNameChange(chapter.id, e.target.value)}
-                                        className={`flex-grow mx-3 bg-transparent outline-none focus:bg-gray-700/50 rounded px-2 py-1 transition-all ${chapter.completed ? 'line-through text-gray-500' : 'text-gray-300'}`}
-                                    />
-                                    <button 
-                                        onClick={() => dispatch({ type: 'REMOVE_CHAPTER', id: chapter.id })}
-                                        className="text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                    >
-                                        <FaTrash className="h-4 w-4" />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                        <button 
-                            onClick={() => dispatch({ type: 'ADD_CHAPTER' })}
-                            className="mt-3 flex items-center gap-2 text-sm text-sky-400 hover:text-sky-300 transition-colors"
-                        >
-                            <FaPlus className="h-4 w-4" /> Add Chapter
-                        </button>
-                    </section>
-                    
-                    <section>
-                        <div className="flex items-center justify-between gap-4 mb-3">
-                            <div className="flex items-center gap-4">
-                                <h3 className="font-semibold text-lg text-gray-200">Lectures</h3>
-                                        {/* The corrected lecture count input field is now correctly nested */}
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
+            <div className="bg-gray-800/80 backdrop-blur-xl border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl transition-all duration-350 transform scale-100">
+                <header className="flex items-start justify-between p-4 border-b border-white/10">
+                    <div>
+                        <h2 className="text-xl font-bold text-white font-header">{localSubject.name}</h2>
+                        <div className="text-xs text-gray-400 mt-2 flex items-center flex-wrap gap-4">
+                            <div className="flex items-center gap-2">
+                                <span>Start Date:</span>
+                                {/* MODIFICATION 2: Uses type="date" for dropdown and simplifies save logic */}
+                                <input 
+                                    type="date" 
+                                    // Value is correctly formatted as YYYY-MM-DD for the date input
+                                    value={localSubject.startDate ? localSubject.startDate.split('T')[0] : ''}
+                                    onChange={(e) =>  {
+                                            const dateValue = e.target.value;
+                                            // Save the YYYY-MM-DD string directly, or null if the input is cleared
+                                            dispatch({ type: 'UPDATE_FIELD', field: 'startDate', value: dateValue || null });
+                                        }}
+                                    className="bg-white/10 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-sky-500"
+                                />
+                            </div>
+                            {/* Time since calculation is now robust */}
+                            {localSubject.startDate && timeSince >= 0 && <span className="text-teal-400">({timeSince} days ago)</span>}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-2 flex items-center gap-2 group">
+                            <a href={localSubject.courseLink} target="_blank" rel="noopener noreferrer" className={`hover:text-sky-400 ${localSubject.courseLink ? '' : 'pointer-events-none'}`}>
+                                <LinkIcon className="h-4 w-4" />
+                            </a>
+                            <input 
+                                type="text" 
+                                placeholder="Paste course link here..." 
+                                value={localSubject.courseLink || ''}
+                                onChange={(e) => dispatch({ type: 'UPDATE_FIELD', field: 'courseLink', value: e.target.value })}
+                                className="bg-white/10 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-sky-500 w-48"
+                            />
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10">
+                        <TimesIcon className="w-6 h-6" />
+                    </button>
+                </header>
+                <main className="p-6 overflow-y-auto flex-grow scrollbar-thin">
+                    <section className="mb-6">
+                        <h3 className="font-semibold text-lg text-gray-200 mb-3">Chapters</h3>
+                        <div className="space-y-2">
+                            {localSubject.chapters.map((chapter) => (
+                                <div key={chapter.id} className="flex items-center bg-white/5 p-2 rounded-lg group">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={chapter.completed}
+                                        onChange={(e) => handleToggleChapter(chapter.id, e.target.checked)}
+                                        className="h-5 w-5 rounded bg-gray-700 border-gray-600 text-sky-400 focus:ring-sky-500 cursor-pointer" 
+                                    />
+                                    <input 
+                                        type="text" 
+                                        value={chapter.name}
+                                        onChange={(e) => handleChapterNameChange(chapter.id, e.target.value)}
+                                        className={`flex-grow mx-3 bg-transparent outline-none focus:bg-gray-700/50 rounded px-2 py-1 transition-all ${chapter.completed ? 'line-through text-gray-500' : 'text-gray-300'}`}
+                                    />
+                                    <button 
+                                        onClick={() => dispatch({ type: 'REMOVE_CHAPTER', id: chapter.id })}
+                                        className="text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                    >
+                                        <TrashIcon className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <button 
+                            onClick={() => dispatch({ type: 'ADD_CHAPTER' })}
+                            className="mt-3 flex items-center gap-2 text-sm text-sky-400 hover:text-sky-300 transition-colors"
+                        >
+                            <PlusIcon className="h-4 w-4" /> Add Chapter
+                        </button>
+                    </section>
+                    
+                    <section>
+                        <div className="flex items-center justify-between gap-4 mb-3">
+                            <div className="flex items-center gap-4">
+                                <h3 className="font-semibold text-lg text-gray-200">Lectures</h3>
+                                        {/* The corrected lecture count input field is now correctly nested */}
 
 <input 
-    type="number" 
-    min="0" 
-    value={lectureInputValue}
-    onChange={(e) => setLectureInputValue(e.target.value)}
-    onBlur={(e) => {
-        const value = parseInt(e.target.value, 10);
-        const newValue = isNaN(value) ? 0 : Math.max(0, value);
-        dispatch({ type: 'UPDATE_FIELD', field: 'totalLectures', value: newValue });
-        setLectureInputValue(newValue.toString()); 
-    }}
-    className="bg-white/10 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-sky-500 w-20"
+    type="number" 
+    min="0" 
+    value={lectureInputValue}
+    onChange={(e) => setLectureInputValue(e.target.value)}
+    onBlur={(e) => {
+        const value = parseInt(e.target.value, 10);
+        const newValue = isNaN(value) ? 0 : Math.max(0, value);
+        dispatch({ type: 'UPDATE_FIELD', field: 'totalLectures', value: newValue });
+        setLectureInputValue(newValue.toString()); 
+    }}
+    className="bg-white/10 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-sky-500 w-20"
 />
-                            </div>
-                        </div>
-                        
-                        <div id="uncompleted-lectures" className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
-                            {/* Uncompleted Lectures (Toggling sets progress) */}
-                            {uncompletedLectures.map(num => (
-                                <LectureToggle 
-                                    key={num} 
-                                    number={num} 
-                                    isCompleted={false} 
-                                    onToggle={handleToggleLecture} 
-                                />
-                            ))}
-                        </div>
+                            </div>
+                        </div>
+                        
+                        <div id="uncompleted-lectures" className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
+                            {/* Uncompleted Lectures (Toggling sets progress) */}
+                            {uncompletedLectures.map(num => (
+                                <LectureToggle 
+                                    key={num} 
+                                    number={num} 
+                                    isCompleted={false} 
+                                    onToggle={handleToggleLecture} 
+                                />
+                            ))}
+                        </div>
 
-                        {allLectures.length > 0 && (
-                            <div className="mt-4 border-t border-white/10 pt-4">
-                                <div className="flex items-center gap-4">
-                                    <button 
-                                        onClick={() => setShowCompletedLectures(prev => !prev)}
-                                        className="flex items-center gap-2 text-sm text-gray-400 hover:text-white"
-                                    >
-                                        {showCompletedLectures ? <FaChevronUp /> : <FaChevronDown />}
-                                        <span>Show {completedLecturesSet.size} Completed</span>
-                                    </button>
-                                    {completedLecturesSet.size > 0 && (
-                                        <button 
-                                            onClick={() => dispatch({ type: 'CLEAR_COMPLETED_LECTURES' })}
-                                            className="text-xs text-gray-400 hover:text-red-400 transition-colors"
-                                        >
-                                            Clear All
-                                        </button>
-                                    )}
-                                </div>
-                                <div 
-                                    className={`grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 mt-3 overflow-hidden transition-all duration-300 ${showCompletedLectures ? 'h-auto max-h-[300px]' : 'h-0 max-h-0'}`}
-                                >
-                                    {/* Completed Lectures (Toggling unsets progress) */}
-                                    {completedLectures.map(num => (
-                                        <LectureToggle 
-                                            key={num} 
-                                            number={num} 
-                                            isCompleted={true} 
-                                            onToggle={handleToggleLecture} 
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </section>
-                </main>
-            </div>
-        </div>
-    );
+                        {allLectures.length > 0 && (
+                            <div className="mt-4 border-t border-white/10 pt-4">
+                                <div className="flex items-center gap-4">
+                                    <button 
+                                        onClick={() => setShowCompletedLectures(prev => !prev)}
+                                        className="flex items-center gap-2 text-sm text-gray-400 hover:text-white"
+                                    >
+                                        {showCompletedLectures ? <ChevronUpIcon className="w-4 h-4"/> : <ChevronDownIcon className="w-4 h-4"/>}
+                                        <span>Show {completedLecturesSet.size} Completed</span>
+                                    </button>
+                                    {completedLecturesSet.size > 0 && (
+                                        <button 
+                                            onClick={() => dispatch({ type: 'CLEAR_COMPLETED_LECTURES' })}
+                                            className="text-xs text-gray-400 hover:text-red-400 transition-colors"
+                                        >
+                                            Clear All
+                                        </button>
+                                    )}
+                                </div>
+                                <div 
+                                    className={`grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 mt-3 overflow-hidden transition-all duration-300 ${showCompletedLectures ? 'h-auto max-h-[300px]' : 'h-0 max-h-0'}`}
+                                >
+                                    {/* Completed Lectures (Toggling unsets progress) */}
+                                    {completedLectures.map(num => (
+                                        <LectureToggle 
+                                            key={num} 
+                                            number={num} 
+                                            isCompleted={true} 
+                                            onToggle={handleToggleLecture} 
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </section>
+                </main>
+            </div>
+        </div>
+    );
 };
