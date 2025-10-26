@@ -6,11 +6,22 @@ import { renderCircularProgressBar } from '../utils/progress';
 
 export const SubjectCard = ({ subject, index, onClick }) => {
     // --- Data Calculation ---
+
+    // 1. Safely access completedLectures, defaulting to [] if it is undefined.
+    const safeCompletedLectures = subject.completedLectures || [];
     const totalLecturesCount = subject.totalLectures || 45; 
-    const lectureProgress = totalLecturesCount > 0 ? (subject.completedLectures.length / totalLecturesCount) * 100 : 0;
     
-    const totalChaptersCount = subject.chapters.length;
-    const completedChapters = subject.chapters.filter(c => c.completed).length;
+    // Calculate progress using the safe array
+    const lectureProgress = totalLecturesCount > 0 
+        ? (safeCompletedLectures.length / totalLecturesCount) * 100 
+        : 0;
+    
+    // 2. Safely access chapters, defaulting to [] if it is undefined.
+    const safeChapters = subject.chapters || [];
+    const totalChaptersCount = safeChapters.length;
+    
+    // Calculate completed chapters and progress using the safe array
+    const completedChapters = safeChapters.filter(c => c.completed).length;
     const chapterProgress = totalChaptersCount > 0 ? (completedChapters / totalChaptersCount) * 100 : 0;
     
     // Get the icon component
@@ -39,15 +50,8 @@ export const SubjectCard = ({ subject, index, onClick }) => {
         >
             {/* 1. Subject Header */}
             <div className="flex items-start justify-between mb-4">
-                {/* CHANGE 1: Removed 'items-center' for better vertical alignment 
-                            if name wraps to 3+ lines.
-                  CHANGE 2: Added 'flex-wrap' to ensure the text can move to the next line.
-                */}
                 <div className="flex items-start flex-wrap"> 
                     <IconComponent className="w-6 h-6 text-sky-400 flex-shrink-0 mr-3 transition-transform duration-300 group-hover:scale-110" />
-                    {/* CHANGE 3: Removed 'truncate'.
-                      CHANGE 4: Added 'flex-1' to let the h3 take the remaining width.
-                    */}
                     <h3 className="font-header font-bold text-lg text-white leading-tight flex-1">
                         {subject.name}
                     </h3>
